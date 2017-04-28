@@ -1,0 +1,7 @@
+***************************************************************************************
+*                                                                                     *
+*                  *)Dispay   w)Write  r)Read   U)Update    d)Delete                  *
+*                      f)First    p)Previous    n)Next    l)Last                      *
+*  s)Search   g)Goto   se)Set Row   sa)Save   b)Backup   re)Restore  H)Help   e)Exit  *
+*                                                                                     *
+***************************************************************************************

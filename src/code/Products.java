@@ -6,7 +6,11 @@
 package code;
 
 import java.io.Serializable;
+import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import javax.swing.text.DateFormatter;
 
 /**
  *
@@ -65,7 +69,11 @@ public class Products implements Serializable,Comparable<Products> {
     public Date getImportDate() {
         return ImportDate;
     }
-
+    public String getStringDate()
+    {
+        SimpleDateFormat fmt=new SimpleDateFormat("dd/MM/yyyy");
+        return fmt.format(new Date());
+    }
     public void setImportDate(Date ImportDate) {
         this.ImportDate = ImportDate;
     }
@@ -81,7 +89,9 @@ public class Products implements Serializable,Comparable<Products> {
     }
     public String toString()
     {
-    return "";
+        DecimalFormat fmt=new DecimalFormat("00000000");
+    return "ID : "+fmt.format(getID())+"\nName : "+getName()+"\nUnit Price : "
+                      +getUnitPrice()+"\nQty : "+getStockQty()+"\nDate : "+getStringDate();
     }
 
     @Override
@@ -91,10 +101,14 @@ public class Products implements Serializable,Comparable<Products> {
     if(o.getID()>this.getID())return -1;
     return 0;
     }
-    public boolean Equal(Products o)
+    public boolean Equals(Products o)
     {
         //true is ID is Equal
         return (compareTo(o)==0);
+    }
+    public boolean isContain(String name)
+    {
+        return (this.getName().toLowerCase().contains(name.toLowerCase()));
     }
     
 }
