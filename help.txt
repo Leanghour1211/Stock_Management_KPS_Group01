@@ -1,0 +1,21 @@
+**********************************************************************************************
+*                                                                                            *
+*        1.Write:                                                                            *
+*          -Press w and then enter to write normally.                                        *
+*          -Press w#title-author-content to write with shortcut user ; for enter.            *
+*        2.Read:                                                                             *
+*          -Press r and the enter to read normally.                                          *
+*          -Press r#id and then enter to read with shortcut.                                 *
+*        3.Update:                                                                           *
+*          -Press u and the enter to update normally.                                        *
+*          -Press u#id and the  enter to update with shortcut.                               *
+*          -Press u#id-[title]=[author]-[content] to update with shortcut.                   *
+*        4.Delete:                                                                           *
+*          -Press d then enter to delete normally.                                           *
+*          -Press d#id then enter to delete with shortcut.                                   *
+*          -Press d#a to delete all record.                                                  *
+*        5.Search:                                                                           *
+*          -Press s and enter to search normally.                                            *
+*          -Press s#id then enter to search with shortcut                                    *
+*                                                                                            *
+**********************************************************************************************

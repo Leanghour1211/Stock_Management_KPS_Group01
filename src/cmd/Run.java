@@ -5,12 +5,15 @@
  */
 package cmd;
 
+
 import java.util.*;
 import java.io.*;
 import code.*;
 import java.text.SimpleDateFormat;
 import java.util.logging.*;
 import java.text.*;
+import org.nocrala.tools.texttablefmt.*;
+
 /**
  *
  * @author User
@@ -19,12 +22,28 @@ public class Run {
     public Run()
     {
         boolean isExit=false;
+        try{
+                    System.out.println(LoadStringFile(new FileReader("Header.txt")));
+                    }catch(IOException ex)
+                    {
+                    
+                    }
         do
         {
             DisplayMenu();
             switch(getMenu())
             {
-                case "*": break;
+                case "*":
+                    {
+                        ArrayList<Products>data=ReadFromFile("Data\\Products.bin");
+                        if(data.isEmpty())
+                        {
+                            System.out.println("No data to display!!!");
+                            break;
+                        }
+                        Display(data,(int) getRow(), getCurrentPage());
+                    }
+                    break;
                 case "w": 
                         {
                             write();
@@ -40,18 +59,38 @@ public class Run {
                             Update();
                         }
                             break;
-                case "d": break;
-                case "f": break;
-                case "p": break;
-                case "n": break;
-                case "l": break;
+                case "d":
+                        delete();
+                    break;
+                case "f":first();
+                        break;
+                case "p":pre();
+                        break;
+                case "n":
+                        next();
+                        break;
+                case "l":last();
+                        break;
                 case "s": 
                         {
                             Search();
                         }
                             break;
-                case "g": break;
-                case "se": break;
+                case "g":
+                    {
+                        System.out.println("Go to Page : ");
+                        long page=getChoice(1,(int) getLastPage());
+                        if(page==-1)break;
+                        savePage(page);
+                        Display(ReadFromFile("Data\\Products.bin"),(int) getRow(), getCurrentPage());
+                    }   
+                    break;
+                case "se":
+                        {
+                        setRow();
+                        getLastPage();
+                        }
+                    break;
                 case "sa":
                         {
                             ArrayList<Products>tmp=ReadFromFile("Data\\last.bin");
@@ -59,15 +98,29 @@ public class Run {
                             {
                                 System.out.println("No data to save!!!");break;
                             }
+                            System.out.println(tmp.get(0).toString());
                             if(isYes("Save Last Data?"))
                             {
                                 SaveData();
                             }
                         }   
                             break;
-                case "b": break;
-                case "re": break;
-                case "h": break;
+                case "b":
+                        BackUp();
+                    break;
+                case "re":
+                    {
+                    Restore();
+                    }
+                    break;
+                case "h":
+                    try{
+                    System.out.println(LoadStringFile(new FileReader("help.txt")));
+                    }catch(IOException ex)
+                    {
+                    
+                    }
+                    break;
                 case "e":isExit=isYes("Are You Sure Want to Exit?"); break;
             }
         }while(!isExit);
@@ -92,7 +145,7 @@ public class Run {
     public void Update()
     {
         ArrayList<Products>data=ReadFromFile("Data\\Products.bin");
-        SaveToFile(data, "Data\\lastbackup.bin");
+        
         if(data.isEmpty())
         {
         System.out.println("No any data");
@@ -112,13 +165,15 @@ public class Run {
         System.out.println("Product Qty : "+pro.getStockQty());
         if(isYes("Edit Qty?"))
         pro.setStockQty(getStockQty("new"));
-        System.out.println("Unit Price : "+pro.getName());
+        System.out.println("Unit Price : "+pro.getUnitPrice());
         if(isYes("Edit Price?"))
         pro.setUnitPrice(getUnitPrice("new"));
         pro.setImportDate(new Date());
-        data.set((int)index, pro);
+        
         if(isYes("Update Information?"))
         {
+            SaveToFile(data, "Data\\lastbackup.bin");
+            data.set((int)index, pro);
             SaveToFile(data, "Data\\Products.bin");
             System.out.println("Update SuccessFully!!!");
         }
@@ -141,7 +196,7 @@ public class Run {
     {
         ArrayList<Products>tmp=ReadFromFile("Data\\last.bin");
         ArrayList<Products>data=ReadFromFile("Data\\Products.bin");
-        
+        SaveToFile(data, "Data\\lastbackup.bin");
         if(tmp.isEmpty())
         {
             System.out.println("No Last Data to Save!!!");
@@ -181,14 +236,89 @@ public class Run {
         }
         return null;
     }
+    public void Restore()
+    {
+        boolean isOk=false;
+        do
+        {
+            System.out.println("Restore : \n1.LastUpdate\n2.Back Up List\n0.Back");
+            switch(getChoice(2))
+            {
+                case 1:
+                    ArrayList<Products>data=ReadFromFile("Data\\lastbackup.bin");
+                    if(data.isEmpty())
+                    {
+                        System.out.println("No data to back up!!!");
+                        return;
+                    }
+                    if(isYes("Are you sure back up last Record?")){
+                        SaveToFile(ReadFromFile("Data\\Products.bin"), "Data\\lastbackup.bin");              
+                        SaveToFile(data, "Data\\Products.bin");
+                        System.out.println("Restore Completed!!!");
+                        savePage(1);
+                        getLastPage();
+                        return;
+                    }
+                    break;
+                case 2:
+                    {
+                    File file=new File("Data\\Backup");
+                        if(file.list().length==0)
+                        {
+                            System.out.println("No Back up Found!!");break;
+                        }
+                        System.out.println("List of Back Up : ");
+                            for(int i=1;i<=file.list().length;i++)
+                            {
+                                System.out.println(i+"."+file.list()[i-1]);
+                            }
+                        System.out.println("0.Back");
+                        int choice=0;
+                        choice=getChoice(file.list().length);
+                        if(choice<=0)break;
+                        if(isYes("Restore "+file.list()[choice-1]+" ?"))
+                        {
+                            SaveToFile(ReadFromFile("Data\\Products.bin"), "Data\\lastbackup.bin");
+                            SaveToFile(new ArrayList<Products>(), "Data\\last.bin");
+                            SaveToFile(ReadFromFile("Data\\Backup\\"+file.list()[choice-1]), "Data\\Products.bin");
+                          
+                            System.out.print("Restore Complete!!\nPress Enter to Continue! : ");
+                            new Scanner(System.in).nextLine();
+                            savePage(1);
+                            getLastPage();
+                            return;
+                        }
+                    }
+                    break;
+                case 0:isOk=true;
+                    break;
+            }
+        }while(!isOk);
+    }
+   
     public void SaveToFile(ArrayList<Products>data,String FilePath)
     {
         try {
+            
             ObjectOutputStream write=new ObjectOutputStream(new FileOutputStream(FilePath));
             write.writeObject(data);
             write.close();
+            
         } catch (IOException ex) {
         
+        }
+    }
+    public void BackUp()
+    {
+        Date date=new Date();
+        
+        SimpleDateFormat fmt=new SimpleDateFormat("ddMMyyyy");
+        String tmp=fmt.format(date)+date.getTime();
+        System.out.println("Back Up Data Name : "+tmp);
+        if(isYes("Back up "+tmp+".bin ?"))
+        {
+            SaveToFile(ReadFromFile("Data\\Products.bin"), "Data\\Backup\\"+tmp+".bin");
+            System.out.println("Back Up Complete!!");
         }
     }
     public ArrayList<Products> ReadFromFile(String FilePath)
@@ -252,9 +382,100 @@ public class Run {
     }
     public void Display(ArrayList<Products>data,int row,long currentpage)
     {
+        org.nocrala.tools.texttablefmt.Table tb=new org.nocrala.tools.texttablefmt.Table(5,BorderStyle.DESIGN_CURTAIN_WIDE);
+        CellStyle cs=new CellStyle(CellStyle.HorizontalAlign.left, CellStyle.AbbreviationStyle.crop, CellStyle.NullStyle.nullText);
+        tb.setColumnWidth(0, 15, 15);
+        tb.setColumnWidth(1, 15, 15);
+        tb.setColumnWidth(2, 10, 10);
+        tb.setColumnWidth(3, 10, 10);
+        tb.setColumnWidth(4, 20, 20);
+        tb.addCell("ID",cs);
+        tb.addCell("Product Name",cs);
+        tb.addCell("Unit Price",cs);
+        tb.addCell("Stock Qty",cs);
+        tb.addCell("Import Date",cs);
+        for(Products p:getListProduct(data, (currentpage-1)*row,row))
+        {
+            tb.addCell(p.getID()+"",cs);
+            tb.addCell(p.getName(),cs);
+            tb.addCell("$ "+p.getUnitPrice(),cs);
+            tb.addCell(p.getStockQty()+"",cs);
+            tb.addCell(p.getStringDate(),cs);
+        }
+        //------------------------------------------
+        tb.addCell("");
+        tb.addCell("");
+        tb.addCell("");
+        tb.addCell("");
+        tb.addCell("");
+        //------------------------------------------
+        org.nocrala.tools.texttablefmt.Table tb1=new org.nocrala.tools.texttablefmt.Table(5,BorderStyle.DESIGN_CURTAIN_WIDE);
+        
+        tb1.setColumnWidth(0, 15, 15);
+        tb1.setColumnWidth(1, 15, 15);
+        tb1.setColumnWidth(2, 10, 10);
+        tb1.setColumnWidth(3, 10, 10);
+        tb1.setColumnWidth(4, 20, 20);
+        tb1.addCell("Page "+currentpage+"/"+getLastPage(data,row),4);
+        tb1.addCell((data.size())+" Records");
+        System.out.println(tb.render());
+        System.out.println(tb1.render());
         
     }
-   
+    public List<Products> getListProduct(ArrayList<Products>data,long from,long count)
+    {
+        List<Products>tmp=new ArrayList<Products>();
+        try{
+        tmp=data.subList((int)from,(int)(from+count));
+        }
+        catch(IndexOutOfBoundsException ex)
+        {
+        tmp=data.subList((int)from,data.size());
+        }
+        return tmp;
+    }
+    public void testTB()
+    {
+    org.nocrala.tools.texttablefmt.Table tb=new org.nocrala.tools.texttablefmt.Table(5);
+        tb.addCell("ID");
+        tb.addCell("Product Name");
+        tb.addCell("Unit Price");
+        tb.addCell("Stock Qty");
+        tb.addCell("Import Date");
+        System.out.println(tb.render());
+    }
+    
+    public void delete()
+    {
+    ArrayList<Products>data=ReadFromFile("Data\\Products.bin");
+        if(data.isEmpty())
+        {
+            System.out.println("No data to detele!!!");return;
+        }
+        long id= getID();
+        if(id==-1)return;
+        
+        Products pro=null;
+        if((pro=getProduct(data, id))==null)
+        {
+            System.out.println("Not Found!!!");
+            return;
+        }
+        System.out.println("-----------------------------------------------");
+        System.out.println(pro.toString());
+        System.out.println("-----------------------------------------------");
+        if(isYes("Are you sure want to delete record?"))
+        {
+            SaveToFile(data, "Data\\lastbackup.bin");
+            data.remove(pro);
+            SaveToFile(data, "Data\\Products.bin");
+            System.out.println("Delete Completed!!!");
+        }
+        else
+        {
+            System.out.println("Delete canceled!!!");
+        }
+    }
     public String getProductName(String prefix)
     {
         String tmp="";
@@ -307,7 +528,9 @@ public class Run {
             System.out.println("Not Found!!!");
             return;
         }
-        System.out.println(pro.toString());  
+        System.out.println("-----------------------------------------------");
+        System.out.println(pro.toString());
+        System.out.println("-----------------------------------------------");
         System.out.print("Press Enter to Continue!!! : ");
         new Scanner(System.in).nextLine();
     }
@@ -325,14 +548,44 @@ public class Run {
         String name=getProductName("Search");
         if(name.equalsIgnoreCase("exit"))return;
         ArrayList<Products>data=getListContainedX(name);
-        if(data.isEmpty())System.out.println("Not Found!!!");
-            for(Products p:data)
+        if(data.isEmpty())
+        {
+            System.out.println("Not Found!!!");
+            return;
+        }
+        boolean isOk=false;
+        int currentrow=1;
+        do
+        { 
+            Display(data,5,currentrow);
+            try
             {
-                System.out.println(p.toString());
+                System.out.println(LoadStringFile(new FileReader("SearchMenu.txt")));
+            }catch(IOException ex){}
+            switch(new Scanner(System.in).nextLine().trim().toLowerCase())
+            {
+                case "f": currentrow=1;
+                        break;
+                case "l": currentrow=(int)getLastPage(data,5);break;
+                case "n": currentrow++;
+                            if(currentrow>=getLastPage(data,5))currentrow=(int)getLastPage(data,5);  
+                    break;
+                case "p": currentrow--;
+                            if(currentrow<=0)currentrow=1;
+                    break;
+                case "g":
+                        currentrow=getChoice(1, (int)getLastPage(data,5));
+                        if(currentrow==-1)return;
+                    break;
+                case "e":isOk=true; break;
+                default:System.out.println("Invalid choice!!!"); break;
             }
-        System.out.println("Press Enter to Continue!");
-        new Scanner(System.in).nextLine();
+            
+        }while(!isOk);
+        
+        
     }
+    
     public int getStockQty(String prefix)
     {
         int result=0;
@@ -377,6 +630,54 @@ public class Run {
             if(!isOk)System.out.println("Invalid!");
         }while(!isOk);
         if(result<0)result=-result;
+        return result;
+    }
+    public int getChoice(int high)
+    {
+        int result=0;
+        String tmp="";
+        boolean isOk=false;
+        do
+        {
+            System.out.print("Input Choice [ 0 - "+high+" ] : ");
+            Scanner read=new Scanner(System.in);
+            tmp=read.nextLine().trim();
+            try
+            {
+            result=Integer.parseInt(tmp);
+            if(result<0)result=-result;
+            if(result<=high)
+            isOk=true;
+            }catch(NumberFormatException ex)
+            {
+                if(tmp.equalsIgnoreCase("exit"))return -1;
+            }
+            if(!isOk)System.out.println("Invalid!");
+        }while(!isOk);
+        return result;
+    }
+    public int getChoice(int low,int high)
+    {
+        int result=0;
+        String tmp="";
+        boolean isOk=false;
+        do
+        {
+            System.out.print("Input Choice [ "+low+" - "+high+" ] : ");
+            Scanner read=new Scanner(System.in);
+            tmp=read.nextLine().trim();
+            try
+            {
+            result=Integer.parseInt(tmp);
+            if(result<0)result=-result;
+            if(result<=high&&result>=low)
+            isOk=true;
+            }catch(NumberFormatException ex)
+            {
+                if(tmp.equalsIgnoreCase("exit"))return -1;
+            }
+            if(!isOk)System.out.println("Invalid!");
+        }while(!isOk);
         return result;
     }
     public boolean isExist(long ID)
@@ -427,6 +728,171 @@ public class Run {
     public long getLastID(ArrayList<Products>data)
     {
         return (data.size()>0)?data.get(data.size()-1).getID()+1:1;
+    }
+    public long getCurrentPage()
+    {
+        long tmp=0;
+        try {
+            DataInputStream read=new DataInputStream(new FileInputStream("Data\\page.bin"));
+            tmp=read.readLong();
+            read.close();
+        } catch (FileNotFoundException ex) {
+            try {
+                DataOutputStream write=new DataOutputStream(new FileOutputStream("Data\\page.bin"));
+                write.writeLong(1);
+                write.close();
+                return getCurrentPage();
+            } catch (FileNotFoundException ex1) {
+            
+            } catch (IOException ex1) {
+                
+            }
+            return getCurrentPage();
+        } catch (IOException ex) {
+        
+        }
+    return tmp;
+    }
+    public long getRow()
+    {
+        long tmp=0;
+        try {
+            DataInputStream read=new DataInputStream(new FileInputStream("Data\\row.bin"));
+            tmp=read.readLong();
+            read.close();
+        } catch (FileNotFoundException ex) {
+            try {
+                DataOutputStream write=new DataOutputStream(new FileOutputStream("Data\\row.bin"));
+                write.writeLong(5);
+                write.close();
+            } catch (FileNotFoundException ex1) {
+            
+            } catch (IOException ex1) {
+                
+            }
+            return getCurrentPage();
+        } catch (IOException ex) {
+        
+        }
+    return tmp;
+    }
+    public void setRow()
+    {
+        long row=getChoice(1,10);
+        if(row==-1)return;
+        try {
+            DataOutputStream write=new DataOutputStream(new FileOutputStream("Data\\row.bin"));
+            write.writeLong(row);
+            write.close();
+        } catch (FileNotFoundException ex1) {
+
+        } catch (IOException ex1) {
+
+        }
+        savePage(1);
+        getLastPage();
+    }
+    public void next()
+    {
+        long tmp=getCurrentPage()+1;
+        if(tmp>getLastPage())tmp=getLastPage();
+        savePage(tmp);
+        ArrayList<Products>data=ReadFromFile("Data\\Products.bin");
+        if(data.isEmpty())
+                        {
+                            System.out.println("No data to display!!!");
+                            return;
+                        }
+        Display(data,(int) getRow(), getCurrentPage());
+    }
+    public void pre()
+    {
+        long tmp=getCurrentPage()-1;
+        if(tmp<1)tmp=1;
+        savePage(tmp);
+        ArrayList<Products>data=ReadFromFile("Data\\Products.bin");
+        if(data.isEmpty())
+                        {
+                            System.out.println("No data to display!!!");
+                            return;
+                        }
+        Display(data,(int) getRow(), getCurrentPage());
+    }
+    public void first()
+    {
+        savePage(1);
+        ArrayList<Products>data=ReadFromFile("Data\\Products.bin");
+        if(data.isEmpty())
+                        {
+                            System.out.println("No data to display!!!");
+                            return;
+                        }
+        Display(data,(int) getRow(), getCurrentPage());
+    }
+    public long getLastPage()
+    {
+        double f=ReadFromFile("Data\\Products.bin").size()/getRow();
+        long tmp=0;
+        if(f*getRow()<ReadFromFile("Data\\Products.bin").size())tmp=(long)f+1;
+        else
+            tmp=(long)f;
+        return tmp;
+    }
+    
+    public long getLastPage(ArrayList<Products>data)
+    {
+        float f=data.size()/getRow();
+    long tmp=0;
+        if(f*getRow()<data.size())tmp=((long)f)+1;
+        else
+            tmp=(long)f;
+            if(tmp==0)tmp=1;
+        return tmp;
+    }
+    public long getLastPage(ArrayList<Products>data,int row)
+    {
+        float f=data.size()/row;
+    long tmp=0;
+        if(f*row<data.size())tmp=((long)f)+1;
+        else
+            tmp=(long)f;
+        return tmp;
+    }
+    public void last()
+    {
+        long tmp=getLastPage();
+        savePage(tmp);
+        ArrayList<Products>data=ReadFromFile("Data\\Products.bin");
+        if(data.isEmpty())
+                        {
+                            System.out.println("No data to display!!!");
+                            return;
+                        }
+        Display(data,(int) getRow(), getCurrentPage());
+    }
+    public void saveRow(long Row)
+    {
+        try {
+                DataOutputStream write=new DataOutputStream(new FileOutputStream("Data\\row.bin"));
+                write.writeLong(Row);
+                write.close();
+            } catch (FileNotFoundException ex1) {
+            
+            } catch (IOException ex1) {
+                
+            }
+    }
+    public void savePage(long Page)
+    {
+        try {
+                DataOutputStream write=new DataOutputStream(new FileOutputStream("Data\\page.bin"));
+                write.writeLong(Page);
+                write.close();
+            } catch (FileNotFoundException ex1) {
+            
+            } catch (IOException ex1) {
+                
+            }
     }
     
 }

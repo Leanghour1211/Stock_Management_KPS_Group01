@@ -30,6 +30,10 @@ public class Products implements Serializable,Comparable<Products> {
         setUnitPrice(UnitPrice);
         setImportDate(ImportDate);
     }
+    public Products(long ID)
+    {
+        this.ID=ID;
+    }
     
 
     public long getID() {
